@@ -4,7 +4,7 @@ module clroutines
     implicit none
 
 contains
-    subroutine init_kernel(kernel, context, iplatform, platform_ids, device_ids, kernel_name, source, options)
+    subroutine init_kernel(kernel, context, iplatform, platform_ids, idevice, device_ids, kernel_name, source, options)
         integer(c_int32_t) :: ierr
         integer(c_intptr_t), allocatable, target :: platform_ids(:)
         integer(c_intptr_t), allocatable, target :: device_ids(:)
@@ -17,7 +17,6 @@ contains
         integer :: i, irec, idevice, iplatform
         integer(c_size_t) :: iret
 
-        idevice = 1
 
         psource=C_LOC(source) ! pointer to source code
         prog=clCreateProgramWithSource(context,1,C_LOC(psource),C_NULL_PTR,ierr)
@@ -104,7 +103,7 @@ contains
 
     end subroutine read_file
 
-    subroutine create_device_context(iplatform, platform_ids, device_ids, context, cmd_queue)
+    subroutine create_device_context(iplatform, platform_ids, idevice, device_ids, context, cmd_queue)
         ! Variable definitions for OpenCL API and in general
         integer(c_int32_t) :: err
         integer(c_size_t) :: zero_size = 0
@@ -120,7 +119,6 @@ contains
         integer(c_intptr_t), target, intent(out) :: cmd_queue
         integer :: iplatform, idevice
 
-        idevice = 1
         ! Get the number of platforms, prior to allocating an array.
         err = clGetPlatformIDs(0, C_NULL_PTR, num_platforms)
         if (err /= CL_SUCCESS) then
