@@ -40,7 +40,7 @@ __kernel void cg(__global double * restrict x,
         rtr_copies[i] = 0;
     #pragma ii 1
     for( int i = 0; i < N; i+=M){
-        double cur = 0.0;
+        double cur = rtr_copies[M-1];
         #pragma unroll
         for( int k = 0; k < M; k++) 
            cur += w[i+k]*p[i+k]*mult[i+k];
@@ -68,10 +68,10 @@ __kernel void cg(__global double * restrict x,
     //}
     double rtr_copies2[M];
     for(int i = 0; i < M; ++i) 
-        rtr_copies[i] = 0;
+        rtr_copies2[i] = 0;
     #pragma ii 1
     for( int i = 0; i < N; i+=M){
-        double cur = 0.0;
+        double cur = rtr_copies2[M-1];
         #pragma unroll
         for( int k = 0; k < M; k++){ 
     	    x[i+k] = x[i+k] + alpha * p[i+k];
@@ -95,7 +95,7 @@ __kernel void cg(__global double * restrict x,
     rtz1[0] = res;
   
     beta[0] = rtz1[0]/rtz2[0];
- 
+    #pragma ivdep 
     for(unsigned ele = 0; ele < N; ele += LX1*LY1*LZ1){
         double shur[LX1*LY1*LZ1];
         double shus[LX1*LY1*LZ1];
@@ -198,6 +198,7 @@ __kernel void cg(__global double * restrict x,
         v[dg[k] - 1] = tmp;
         k = k + blk_len;
     }
+    #pragma ii 1
     for(int i = (o-1); i < m; i+=2){
         double tmp =w[gd[i] - 1] + w[gd[i+1] - 1];
         v[dg[i]-1] = tmp;
