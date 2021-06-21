@@ -1,4 +1,5 @@
 #define M 8
+#define M2 8
 #define LX1 8
 #define LY1 8
 #define LZ1 8
@@ -15,7 +16,7 @@ __kernel void cg(__global double * restrict x,
                  __global const double * restrict g6,
                  __global const double * restrict dx,
                  __global const double * restrict dxt,
-                 __global int * restrict mask,
+                 __global const int * restrict mask,
                  __global double * restrict rtz1,
                  __global double * restrict rtz2,
                  __global double * restrict beta,
@@ -27,35 +28,10 @@ __kernel void cg(__global double * restrict x,
                  const int m,
                  const int o,
                  const int nb)
-{   
-      
-    double res = 0.0;
-    int ma = mask[0];
-    for(int i = 1; i < (ma + 1); i++){
-       int k = mask[i];
-       w[k-1] = 0.0; 
-    }
-    #pragma unroll 32 
-    for( int i = 0; i < N; ++i){
-        res +=  w[i]*p[i]*mult[i];
-    }
-
-    double pap = res;
-    double alpha = rtz1[0]/pap;
-    res = 0.0;
-
-    #pragma unroll 32 
-    for( int i = 0; i < N; ++i){
-    	x[i] = x[i] + alpha * p[i];
-    	r[i] = r[i] - alpha * w[i];
-        res +=  r[i]*r[i]*mult[i];
-    }
-    rtz2[0] = rtz1[0];
-    rtz1[0] = res;
-  
-    beta[0] = rtz1[0]/rtz2[0];
- 
-    for(unsigned ele = 0; ele < N; ele += LX1*LY1*LZ1){
+{
+   beta[0] = 5.0;   
+   #pragma ivdep
+   for(unsigned ele = 0; ele < N; ele += LX1*LY1*LZ1){
         double shur[LX1*LY1*LZ1];
         double shus[LX1*LY1*LZ1];
         double shut[LX1*LY1*LZ1];
@@ -103,6 +79,7 @@ __kernel void cg(__global double * restrict x,
                     double rtmp = 0.0;
                     double stmp = 0.0;
                     double ttmp = 0.0;
+                    #pragma unroll
                     for (unsigned l = 0; l<LX1; l++){
                       rtmp += shdxt[l+i*LX1] * shu[l+j*LX1 +k*LX1*LY1];
                       stmp += shdxt[l+j*LX1] * shu[i+l*LX1 + k*LX1*LY1];
@@ -129,6 +106,7 @@ __kernel void cg(__global double * restrict x,
                     int ijk = ij + k*LX1*LY1;
                     
                     double wijke = 0.0;
+                    #pragma unroll
                     for(unsigned l = 0; l<LX1; l++){
                         wijke += shdx[l + i*LX1] * shur[l+j*LX1+k*LX1*LY1];
                         wijke += shdx[l + j*LX1] * shus[i+l*LX1+k*LX1*LY1];
@@ -143,36 +121,7 @@ __kernel void cg(__global double * restrict x,
         for(unsigned ijk=0; ijk<LX1*LY1*LZ1; ++ijk)
             w[ijk + ele] = shw[ijk];
     }
-    //gather
-    int k = 0;
-    for(int i = 0; i < nb; i++){
-        int blk_len = b[i];
-        double tmp = w[gd[k] - 1];
-        for(int j = 1; j < blk_len; j++){
-            tmp = tmp + w[gd[k + j] - 1];
-        }
-        v[dg[k] - 1] = tmp;
-        k = k + blk_len;
-    }
-    for(int i = (o-1); i < m; i+=2){
-        double tmp =w[gd[i] - 1] + w[gd[i+1] - 1];
-        v[dg[i]-1] = tmp;
-    }
-    //scatter
-    k = 0;
-    for(int i = 0; i < nb; i++){
-        int blk_len = b[i];
-        double tmp = v[dg[k] - 1];
-        for(int j = 0; j < blk_len; j++){
-            w[gd[k  + j] - 1] = tmp;
-        }
-        k = k + blk_len;
-    }
-    for(int i = k; i < m; i++){
-        w[gd[i]-1] = v[dg[i]-1];
-    }
-
-
 }
+
 
 

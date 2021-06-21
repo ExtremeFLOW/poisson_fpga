@@ -1,7 +1,5 @@
 program poisson_fpga
   use neko
-  use clfortran
-  use clroutines
   use cg_fpga
   implicit none
 
@@ -34,7 +32,7 @@ program poisson_fpga
   niter = 1000
 
   idevice = 1
-  iplatform = 1
+  iplatform = 2
   
   call neko_init 
   
@@ -120,7 +118,7 @@ subroutine set_timer_flop_cnt(iset, nelt, nx1, niter, n)
   integer, intent(inout) :: nx1
   integer, intent(inout) :: niter
   integer, intent(inout) :: n
-  real(kind=dp), save :: time0, time1, mflops, flop_a, flop_cg
+  real(kind=dp), save :: time0, time1, mflops, flop_a, flop_cg, eff_BW, arr_time
   integer :: ierr  
   real(kind=dp) :: nxyz, nx
   
@@ -134,14 +132,21 @@ subroutine set_timer_flop_cnt(iset, nelt, nx1, niter, n)
      time1 = time1-time0
      flop_a = (15d0 * nxyz + 12d0 * nx * nxyz) * dble(nelt) * dble(niter)
      flop_cg = dble(niter)*15d0*dble(nelt)*nxyz
+     eff_BW = 6d0/nx/dble(nelt)**(1d0/3d0) + 3d0 + 7d0 + 10d0 + ((nx)**3-(nx-2d0)**3)/nx**3 * 2d0
+     eff_BW = rp * eff_Bw * nxyz * dble(nelt) * dble(niter)/(1.d9*time1)
+     arr_time= rp * nxyz * dble(nelt) * dble(niter)/(1.d9*time1)
      if (time1 .gt. 0) mflops = (flop_a + flop_cg)/(1.d6*time1)
      if (pe_rank .eq. 0) then
         write(6,*)
         write(6,1) nelt,pe_size,nx1
         write(6,2) mflops, time1
+        write(6,3) eff_BW
+        write(6,4) arr_time
      endif
 1    format('nelt = ',i7, ', np = ', i9,', nx1 = ', i7)
 2    format('Tot MFlops = ', 1pe12.4, ', Time        = ', e12.4)
+3    format('Effective bandwidth, GB/s', 1pe12.4)
+4    format('arraysize/time GB/s', 1pe12.4)
   endif
 
 end subroutine set_timer_flop_cnt

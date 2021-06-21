@@ -101,20 +101,20 @@ contains
 
     err = clReleaseProgram(prog)
     if (err.ne.0) stop 'clReleaseProgram'
-    this%cl_x = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_1_INTELFPGA),&
+    this%cl_x = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_4_INTELFPGA),&
                           this%array_size,C_NULL_PTR, err)
     if (err.ne.0) stop 'clCreateBuffer'
-    this%cl_w = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE, CL_CHANNEL_2_INTELFPGA),&
+    this%cl_w = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE, CL_CHANNEL_3_INTELFPGA),&
                           this%array_size,C_NULL_PTR, err)
     if (err.ne.0) stop 'clCreateBuffer'
-    this%cl_res = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_3_INTELFPGA),&
+    this%cl_res = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_1_INTELFPGA),&
                           this%array_size,C_NULL_PTR, err)
     if (err.ne.0) stop 'clCreateBuffer'
-    this%cl_p = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_4_INTELFPGA),&
+    this%cl_p = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_2_INTELFPGA),&
                           this%array_size,C_NULL_PTR, err)
     if (err.ne.0) stop 'clCreateBuffer'
 
-    this%cl_mult = clCreateBuffer(this%context,ior(CL_MEM_READ_ONLY,CL_CHANNEL_4_INTELFPGA),&
+    this%cl_mult = clCreateBuffer(this%context,ior(CL_MEM_READ_ONLY,CL_CHANNEL_1_INTELFPGA),&
                           this%array_size,C_NULL_PTR, err)
     if (err.ne.0) stop 'clCreateBuffer'
     this%cl_g1 = clCreateBuffer(this%context,&
@@ -165,13 +165,13 @@ contains
     this%cl_b = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_1_INTELFPGA),&
                           this%array_size,C_NULL_PTR, err)
     if (err.ne.0) stop 'clCreateBuffer'
-    this%cl_gd = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_1_INTELFPGA),&
+    this%cl_gd = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_4_INTELFPGA),&
                           this%array_size,C_NULL_PTR, err)
     if (err.ne.0) stop 'clCreateBuffer'
-    this%cl_dg = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_1_INTELFPGA),&
+    this%cl_dg = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_4_INTELFPGA),&
                           this%array_size,C_NULL_PTR, err)
     if (err.ne.0) stop 'clCreateBuffer'
-    this%cl_v = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_1_INTELFPGA),&
+    this%cl_v = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_2_INTELFPGA),&
                           this%array_size,C_NULL_PTR, err)
     if (err.ne.0) stop 'clCreateBuffer'
     
@@ -236,6 +236,8 @@ contains
     this%gs_m = gs_Xh%nlocal
     this%lo = gs_Xh%local_facet_offset
     this%nb = gs_Xh%nlocal_blks
+    print *, 'nlocal unique ids', this%gs_m, 'local dofs', this%lo,&
+           'number of blocks', this%nb
     err=clSetKernelArg(this%cl_cg_kernel,22,sizeof(this%gs_m),C_LOC(this%gs_m))
     if (err.ne.0) stop 'clSetKernelArg'
     err=clSetKernelArg(this%cl_cg_kernel,23,sizeof(this%lo),C_LOC(this%lo))
@@ -408,10 +410,10 @@ contains
     real(kind=rp), target :: rtz1, rnorm
     err = clEnqueueReadBuffer(this%cmd_queue,this%cl_rtz1,CL_TRUE,&
                                  0_rp,int(rp,8),C_LOC(rtz1),0,C_NULL_PTR,C_NULL_PTR)
-    !if (err.ne.0) stop 'clEnqueueReadBuffer'
+    if (err.ne.0) stop 'clEnqueueReadBuffer'
     !err = clEnqueueReadBuffer(this%cmd_queue,this%cl_w,CL_TRUE,&
     !                             0_rp,this%array_size,C_LOC(this%w),0,C_NULL_PTR,C_NULL_PTR)
-    !if (err.ne.0) stop 'clEnqueueReadBuffer'
+    if (err.ne.0) stop 'clEnqueueReadBuffer'
     err=clFinish(this%cmd_queue)
     rnorm = sqrt(rtz1)
     print *, rnorm, rtz1
