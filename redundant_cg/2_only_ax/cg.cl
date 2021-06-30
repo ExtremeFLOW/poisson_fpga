@@ -68,9 +68,9 @@ __kernel void cg(__global float * restrict x,
             z_c[i] = z_cord[i+e*8];
         }
         #pragma loop_coalesce
-        for(unsigned i = 0; i < LX1; i++){
+        for(unsigned j = 0; j < 2*2; j++){
             #pragma unroll
-            for(unsigned j = 0; j < 2*2; j++){
+            for(unsigned i = 0; i < LX1; i++){
                 float temp1 = 0.0;
                 float temp2 = 0.0;
                 float temp3 = 0.0;
@@ -89,7 +89,6 @@ __kernel void cg(__global float * restrict x,
         #pragma ii 1
         #pragma ivdep
         for(unsigned k = 0; k < 2; k++){ 
-            #pragma unroll 2
             for(unsigned i = 0; i < LX1; i++){
                 #pragma unroll
                 for(unsigned j = 0; j < LX1; j++){
@@ -110,10 +109,9 @@ __kernel void cg(__global float * restrict x,
         }
         #pragma loop_coalesce
         #pragma ii 1
-        #pragma unroll 4
-        for(unsigned i = 0; i < LX1*LX1; i++){
-            #pragma unroll
-            for(unsigned j = 0; j < LX1; j++){
+        for(unsigned j = 0; j < LX1; j++){
+            #pragma unroll 16
+            for(unsigned i = 0; i < LX1*LX1; i++){
                 float temp1 = 0.0;
                 float temp2 = 0.0;
                 float temp3 = 0.0;
@@ -260,5 +258,4 @@ __kernel void cg(__global float * restrict x,
         }
     }
 }
-
 
