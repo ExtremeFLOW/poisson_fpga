@@ -378,3 +378,4 @@ __kernel void cg(__global double * restrict x_1,
         wn[ji2][idx2] = tmp;
     }
 }
+
