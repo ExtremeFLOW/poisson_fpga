@@ -395,16 +395,28 @@ contains
   subroutine banked_fpga_get_data(this, x)
     type(cg_banked_fpga_t), target :: this
     type(field_t), target :: x
-    integer :: err
-    err = clEnqueueReadBuffer(this%cmd_queue,this%cl_w(1),CL_TRUE,&
-                                 0_rp,this%array_size/4,C_LOC(x%x(1,1,1,1)),0,C_NULL_PTR,C_NULL_PTR)
-    err = clEnqueueReadBuffer(this%cmd_queue,this%cl_w(2),CL_TRUE,&
-                                 0_rp,this%array_size/4,C_LOC(x%x(1,1,1,128)),0,C_NULL_PTR,C_NULL_PTR)
-    err = clEnqueueReadBuffer(this%cmd_queue,this%cl_w(3),CL_TRUE,&
-                                 0_rp,this%array_size/4,C_LOC(x%x(1,1,1,128*2)),0,C_NULL_PTR,C_NULL_PTR)
-    err = clEnqueueReadBuffer(this%cmd_queue,this%cl_w(4),CL_TRUE,&
-                                 0_rp,this%array_size/4,C_LOC(x%x(1,1,1,128*3)),0,C_NULL_PTR,C_NULL_PTR)
+    integer :: err, n, i, b, j
+    real(kind=rp), allocatable, target :: temp(:)
+    n = x%dof%size()
+    allocate(temp(n))
+    err = clEnqueueReadBuffer(this%cmd_queue,this%cl_x(1),CL_TRUE,&
+                                 0_rp,this%array_size/4,C_LOC(temp),0,C_NULL_PTR,C_NULL_PTR)
+    err = clEnqueueReadBuffer(this%cmd_queue,this%cl_x(2),CL_TRUE,&
+                                 0_rp,this%array_size/4,C_LOC(temp(n/4+1)),0,C_NULL_PTR,C_NULL_PTR)
+    err = clEnqueueReadBuffer(this%cmd_queue,this%cl_x(3),CL_TRUE,&
+                                 0_rp,this%array_size/4,C_LOC(temp(n/2+1)),0,C_NULL_PTR,C_NULL_PTR)
+    err = clEnqueueReadBuffer(this%cmd_queue,this%cl_x(4),CL_TRUE,&
+                                 0_rp,this%array_size/4,C_LOC(temp(3*n/4+1)),0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueReadBuffer'
+    do i = 1, n/(4*8)
+       do b = 1, this%nbanks
+          do j = 1, 8
+             x%x((i-1)*32+(b-1)*8+j,1,1,1) = temp((b-1)*n/4+(i-1)*8+j)
+          end do
+       end do
+    end do
+    deallocate(temp)
+ 
    end subroutine banked_fpga_get_data 
 
    subroutine cl_create_banked_buffer(context, array_size, CL_MEM_RW, cl_x)
@@ -438,12 +450,12 @@ contains
     integer :: err, n_bank_array, i, nbanks, b, j
     nbanks = 4
     bank_array_size = array_size/nbanks
-    n_bank_array = n_bank_array/nbanks
+    n_bank_array = n/nbanks
     allocate(temp(n_bank_array))
     do b = 1, nbanks
-       do i = 1, n_bank_array
+       do i = 1, n_bank_array/8
           do j = 1, 8
-             temp(i) = x((i-1)*nbanks*8+j)
+             temp((i-1)*8+j) = x((i-1)*nbanks*8+j+(b-1)*8)
           end do
        end do
        err = clEnqueueWriteBuffer(cmd_queue,cl_x(b),CL_TRUE,0_rp,bank_array_size,&
