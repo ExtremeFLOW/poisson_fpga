@@ -105,6 +105,7 @@ __kernel void cg(__global double * restrict x_1,
         int blk_len = b[i];
         gs_data_blk blk_data;
         blk_data.blk_len = blk_len;
+        #pragma unroll
         for(int j = 0; j < MAX_DEG; j++)
            blk_data.w[j] = 0; 
         for(int j =0; j < blk_len; j++){
@@ -165,7 +166,6 @@ __kernel void gs_blk(__global double * restrict w_1,
     wn[2] = w_3;
     wn[3] = w_4;
     #pragma ivdep
-    #pragma ii 1
     for(int i = 0; i < nb; i++){
         gs_data_blk gs_blk_info = read_channel_intel(gs_add_blk_channel);
         double val = 0.0;
@@ -173,6 +173,8 @@ __kernel void gs_blk(__global double * restrict w_1,
         for(int j = 0; j < MAX_DEG; j++){
            val += gs_blk_info.w[j]; 
         }
+        #pragma ivdep
+        #pragma ii 1
         for(int j = 0; j < gs_blk_info.blk_len; j++){
             wn[gs_blk_info.bank[j]][gs_blk_info.idx[j]] = val;
         }
