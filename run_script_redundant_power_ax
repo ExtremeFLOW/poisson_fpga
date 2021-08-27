@@ -1,0 +1,22 @@
+#!/bin/bash
+#SBATCH -N 1
+#SBATCH -J ax_redundan_fpga
+#SBATCH -A hpc-prf-aafpga
+#SBATCH -p fpga
+#SBATCH -t 00:20:00
+#SBATCH --constraint=19.4.0_max
+
+module load nalla_pcie/19.4.0
+module load intelFPGA_pro/20.2.0
+module load mpi/OpenMPI 
+module load numlib/OpenBLAS
+srun -n 1 ./poisson_redundant_power data/128.nmsh 8   ../../poisson_fpga/redundant_cg/15_concurrent_ax32_seed1/cg.aocx
+srun -n 1 ./poisson_redundant_power data/256.nmsh 8   ../../poisson_fpga/redundant_cg/15_concurrent_ax32_seed1/cg.aocx
+srun -n 1 ./poisson_redundant_power data/512.nmsh 8   ../../poisson_fpga/redundant_cg/15_concurrent_ax32_seed1/cg.aocx
+srun -n 1 ./poisson_redundant_power data/1024.nmsh 8  ../../poisson_fpga/redundant_cg/15_concurrent_ax32_seed1/cg.aocx
+srun -n 1 ./poisson_redundant_power data/2048.nmsh 8  ../../poisson_fpga/redundant_cg/15_concurrent_ax32_seed1/cg.aocx
+srun -n 1 ./poisson_redundant_power data/4096.nmsh 8  ../../poisson_fpga/redundant_cg/15_concurrent_ax32_seed1/cg.aocx
+srun -n 1 ./poisson_redundant_power data/8192.nmsh 8  ../../poisson_fpga/redundant_cg/15_concurrent_ax32_seed1/cg.aocx
+srun -n 1 ./poisson_redundant_power data/16384.nmsh 8 ../../poisson_fpga/redundant_cg/15_concurrent_ax32_seed1/cg.aocx
+srun -n 1 ./poisson_redundant_power data/32768.nmsh 8 ../../poisson_fpga/redundant_cg/15_concurrent_ax32_seed1/cg.aocx
+ 

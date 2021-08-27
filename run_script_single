@@ -1,0 +1,22 @@
+#!/bin/bash
+#SBATCH -N 1
+#SBATCH -J ax_redundan_fpga
+#SBATCH -A hpc-prf-aafpga
+#SBATCH -p fpga
+#SBATCH -t 00:10:00
+#SBATCH --constraint=19.4.0_max
+
+module load nalla_pcie/19.4.0
+module load intelFPGA_pro/20.2.0
+module load mpi/OpenMPI 
+module load numlib/OpenBLAS
+srun -n 1 ./poisson_single data/128.nmsh 8   ../../poisson_fpga/fpga_cg/16_fp32_ax_concurrent/cg.aocx
+srun -n 1 ./poisson_single data/256.nmsh 8   ../../poisson_fpga/fpga_cg/16_fp32_ax_concurrent/cg.aocx
+srun -n 1 ./poisson_single data/512.nmsh 8   ../../poisson_fpga/fpga_cg/16_fp32_ax_concurrent/cg.aocx
+srun -n 1 ./poisson_single data/1024.nmsh 8  ../../poisson_fpga/fpga_cg/16_fp32_ax_concurrent/cg.aocx
+srun -n 1 ./poisson_single data/2048.nmsh 8  ../../poisson_fpga/fpga_cg/16_fp32_ax_concurrent/cg.aocx
+srun -n 1 ./poisson_single data/4096.nmsh 8  ../../poisson_fpga/fpga_cg/16_fp32_ax_concurrent/cg.aocx
+srun -n 1 ./poisson_single data/8192.nmsh 8  ../../poisson_fpga/fpga_cg/16_fp32_ax_concurrent/cg.aocx
+srun -n 1 ./poisson_single data/16384.nmsh 8 ../../poisson_fpga/fpga_cg/16_fp32_ax_concurrent/cg.aocx
+srun -n 1 ./poisson_single data/32768.nmsh 8 ../../poisson_fpga/fpga_cg/16_fp32_ax_concurrent/cg.aocx
+ 
