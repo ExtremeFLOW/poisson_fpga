@@ -161,7 +161,7 @@ contains
     this%cl_b = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_1_INTELFPGA),&
                           this%array_size,C_NULL_PTR, err)
     if (err.ne.0) stop 'clCreateBuffer'
-    this%cl_gd = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_1_INTELFPGA),&
+    this%cl_gd = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_2_INTELFPGA),&
                           this%array_size,C_NULL_PTR, err)
     if (err.ne.0) stop 'clCreateBuffer'
     this%cl_dg = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_1_INTELFPGA),&
@@ -400,12 +400,11 @@ contains
     ksp_results%iter = 0
     if(rnorm .eq. zero) return
     do iter = 1, max_iter
-       print *, 'we get here'
+       err=clEnqueueTask(this%cmd_queue,this%cl_cg_kernel,0,C_NULL_PTR,C_NULL_PTR)
+       if (err .ne. 0) stop 'clEnqueueEnqueueTask cg'
        err=clEnqueueTask(this%cmd_queue_gs,this%cl_gs_add_kernel,0,C_NULL_PTR,C_NULL_PTR)
        if (err .ne. 0) stop 'clEnqueueEnqueueTask cg'
        err=clEnqueueTask(this%cmd_queue_blk,this%cl_gs_blk_kernel,0,C_NULL_PTR,C_NULL_PTR)
-       if (err .ne. 0) stop 'clEnqueueEnqueueTask cg'
-       err=clEnqueueTask(this%cmd_queue,this%cl_cg_kernel,0,C_NULL_PTR,C_NULL_PTR)
        if (err .ne. 0) stop 'clEnqueueEnqueueTask cg'
        call host_kernel(this, gs_h, blst, n)
     end do
@@ -494,15 +493,16 @@ contains
     integer :: n
     real(kind=rp), target :: x(n)
     real(kind=rp), allocatable, target :: temp(:)
-    integer :: err, n_bank_array, i, nbanks, b, j
+    integer :: err, n_bank_array, i, nbanks, b, j, blk
     nbanks = 4
+    blk = 512
     bank_array_size = array_size/nbanks
     n_bank_array = n/nbanks
     allocate(temp(n_bank_array))
     do b = 1, nbanks
-       do i = 1, n_bank_array/8
-          do j = 1, 8
-             temp((i-1)*8+j) = x((i-1)*nbanks*8+j + (b-1)*8)
+       do i = 1, n_bank_array/blk
+          do j = 1, blk
+             temp((i-1)*blk+j) = x((i-1)*nbanks*blk+j + (b-1)*blk)
           end do
        end do
        err = clEnqueueWriteBuffer(cmd_queue,cl_x(b),CL_TRUE,0_rp,bank_array_size,&

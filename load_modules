@@ -1,0 +1,5 @@
+#!/bin/bash
+module load mpi/OpenMPI
+module load numlib/OpenBLAS
+module load intelFPGA_pro/20.2.0
+module load nalla_pcie/19.4.0

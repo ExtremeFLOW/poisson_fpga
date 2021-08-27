@@ -69,59 +69,10 @@ __kernel void cg(__global double * restrict x_1,
     wn[2] = w_3;
     wn[3] = w_4;
     
-    //gather-scatter
-    int k = 0;
-    #pragma ivdep
-    for(int i = 0; i < nb; i++){
-        double rtr_copies3[M2];
-        int idx[8];
-        int bank[8];
-        int blk_len = b[i];
-        int k1 = gd[k]-1;
-        int j1 = k1 % 32;
-        int id1 = k1 >> 5;
-        bank[0] = j1 >> 3;
-        int off1 = j1 % 8;
-        idx[0] =  off1 + id1*8;
-        
-        double tmp = wn[bank[0]][idx[0]];
-        #pragma unroll
-        for(int i = 0; i < M2; ++i) 
-            rtr_copies3[i] = 0.0;
-        #pragma ivdep
-        #pragma unroll
-        for(int j = 1; j < blk_len; j++){
-            int k2 = gd[k+j]-1;
-            int j2 = k2 % 32;
-            int id2 = k2 >> 5;
-            bank[j] = j2>> 3;
-            int off2 = j2 % 8;
-            idx[j] =  off2 + id2*8;
-        }
-
-        #pragma ivdep
-        #pragma ii 1
-        for(int j = 1; j < blk_len; j++){
-            double cur = rtr_copies3[M2-1] + wn[bank[j]][idx[j]];
-            #pragma unroll
-            for(unsigned j = M2-1; j>0; j--){
-                rtr_copies3[j] = rtr_copies3[j-1];
-            }
-            rtr_copies3[0] = cur;
-        }
-        #pragma unroll
-        for(unsigned i = 0; i < M2; i++)
-            tmp += rtr_copies3[i];
-        #pragma ivdep
-        #pragma ii 1
-        for(int j = 0; j < blk_len; j++){
-            wn[bank[j]][idx[j]] = tmp;
-        }
-        k = k + blk_len;
-    }
+    
     #pragma ivdep
     #pragma unroll 8
-    #pragma ii 1
+    #pragma max_concurrency(64) 
     for(int i = (o-1); i < m; i+=2){
         int k1 = gd[i]-1;
         int j1 = k1 % 32;

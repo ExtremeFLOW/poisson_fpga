@@ -69,8 +69,7 @@ contains
     integer(c_size_t),target ::  length
     integer(c_intptr_t), target :: prog
     integer(c_intptr_t), allocatable, target :: platform_ids(:), device_ids(:)
-    integer :: irec, i
-    integer, target :: zero = 0
+    integer :: irec, i, k
     integer :: filesize , lx
     character(len=1,kind=c_char), allocatable, target :: binary(:)
     character(len=1,kind=c_char), target :: c_kernel_name(1:1024)
@@ -227,7 +226,8 @@ contains
     type(bc_list_t) :: bclst
     type(gs_t), target :: gs_Xh
     real(kind=rp), target :: rtz1, beta
-    integer :: err, k
+    integer :: err, k, lvl, id_tmp,  i
+    integer, allocatable, target :: dg_tmp(:), gd_tmp(:)
 
     this%gs_m = gs_Xh%nlocal
     this%lo = gs_Xh%local_facet_offset
@@ -239,73 +239,56 @@ contains
     if (err.ne.0) stop 'clSetKernelArg'
     err=clSetKernelArg(this%cl_cg_kernel,k+2,sizeof(this%nb),C_LOC(this%nb))
     if (err.ne.0) stop 'clSetKernelArg'
-    print *, vlsc2(x%x, x%x, int(this%array_size/rp,4))
-    print *, vlsc2(w%x, w%x, int(this%array_size/rp,4))
-    print *, vlsc2(r%x, r%x, int(this%array_size/rp,4))
 
-
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_mult,CL_TRUE,0_8,this%array_size,&
-                               C_LOC(c_Xh%mult), 0,C_NULL_PTR,C_NULL_PTR)
-    if (err .ne. 0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_g1,CL_TRUE,0_8,this%array_size,&
-                               C_LOC(c_Xh%g11), 0,C_NULL_PTR,C_NULL_PTR)
-    if (err .ne. 0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_g2,CL_TRUE,0_8,this%array_size,&
-                               C_LOC(c_Xh%g12), 0,C_NULL_PTR,C_NULL_PTR)
-    if (err .ne. 0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_g3,CL_TRUE,0_8,this%array_size,&
-                               C_LOC(c_Xh%g13), 0,C_NULL_PTR,C_NULL_PTR)
-    if (err .ne. 0) stop 'clEnqueueWriteBuffer'
+    call cl_write_banked_buffer(this%cmd_queue, this%array_size, c_Xh%dof%size(), c_Xh%mult, this%cl_mult)  
+    call cl_write_banked_buffer(this%cmd_queue, this%array_size, c_Xh%dof%size(), x%x , this%cl_x)  
+    call cl_write_banked_buffer(this%cmd_queue, this%array_size, c_Xh%dof%size(), w%x , this%cl_w)  
+    call cl_write_banked_buffer(this%cmd_queue, this%array_size, c_Xh%dof%size(), r%x , this%cl_p)  
+    call cl_write_banked_buffer(this%cmd_queue, this%array_size, c_Xh%dof%size(), r%x , this%cl_res)  
+    call cl_write_banked_buffer(this%cmd_queue, this%array_size, c_Xh%dof%size(), c_Xh%g11, this%cl_g1)  
+    call cl_write_banked_buffer(this%cmd_queue, this%array_size, c_Xh%dof%size(), c_Xh%g12, this%cl_g2)  
+    call cl_write_banked_buffer(this%cmd_queue, this%array_size, c_Xh%dof%size(), c_Xh%g13, this%cl_g3)  
+    call cl_write_banked_buffer(this%cmd_queue, this%array_size, c_Xh%dof%size(), c_Xh%g22, this%cl_g4)  
+    call cl_write_banked_buffer(this%cmd_queue, this%array_size, c_Xh%dof%size(), c_Xh%g23, this%cl_g5)  
+    call cl_write_banked_buffer(this%cmd_queue, this%array_size, c_Xh%dof%size(), c_Xh%g33, this%cl_g6)  
     
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_g4,CL_TRUE,0_8,this%array_size,&
-                               C_LOC(c_Xh%g22), 0,C_NULL_PTR,C_NULL_PTR)
-    if (err .ne. 0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue, this%cl_g5, CL_TRUE, 0_8, this%array_size,&
-                               C_LOC(c_Xh%g23), 0, C_NULL_PTR, C_NULL_PTR)
-    if (err .ne. 0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_g6,CL_TRUE,0_8,this%array_size,&
-                               C_LOC(c_Xh%g33), 0,C_NULL_PTR,C_NULL_PTR)
-    if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_dx,CL_TRUE,0_8,this%dx_size,&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_dx,CL_TRUE,0_rp,this%dx_size,&
                                C_LOC(Xh%dx), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_dxt,CL_TRUE,0_8,this%dx_size,&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_dxt,CL_TRUE,0_rp,this%dx_size,&
                                C_LOC(Xh%dxt), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_w,CL_TRUE,0_8,this%array_size,&
-                               C_LOC(w%x), 0,C_NULL_PTR,C_NULL_PTR)
-    if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_mask,CL_TRUE,0_8,int((bclst%bc(1)%bcp%msk(0)+1)*4,8),&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_mask,CL_TRUE,0_rp,int((bclst%bc(1)%bcp%msk(0)+1)*4,8),&
                                C_LOC(bclst%bc(1)%bcp%msk(0)), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_x,CL_TRUE,0_8,this%array_size,&
-                               C_LOC(x%x), 0,C_NULL_PTR,C_NULL_PTR)
-    if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_res,CL_TRUE,0_8,this%array_size,&
-                               C_LOC(r%x), 0,C_NULL_PTR,C_NULL_PTR)
-    if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_p,CL_TRUE,0_8,this%array_size,&
-                               C_LOC(r%x), 0,C_NULL_PTR,C_NULL_PTR)
-    if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_beta,CL_TRUE,0_8,int(8,8),&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_beta,CL_TRUE,0_rp,int(8,8),&
                                C_LOC(beta), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_rtz1,CL_TRUE,0_8,int(8,8),&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_rtz1,CL_TRUE,0_rp,int(8,8),&
                                C_LOC(rtz1), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_v,CL_TRUE,0_8,int(this%gs_m*rp,8),&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_v,CL_TRUE,0_rp,int(this%gs_m*rp,8),&
                                C_LOC(gs_Xh%local_gs), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_dg,CL_TRUE,0_8,int(this%gs_m*4,8),&
-                               C_LOC(gs_Xh%local_dof_gs), 0,C_NULL_PTR,C_NULL_PTR)
+    allocate(dg_tmp(this%gs_m), gd_tmp(this%gs_m))
+    do i = 1,this%gs_m
+       lvl = mod(gs_Xh%local_gs_dof(i)-1, 32)
+       id_tmp = (gs_Xh%local_gs_dof(i)-1)/32
+       dg_tmp(i) = lvl/8
+       gd_tmp(i) = mod(lvl, 8) + id_tmp*8
+       print *, dg_tmp(i), gd_tmp(i)
+    end do     
+
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_dg,CL_TRUE,0_rp,int(this%gs_m*4,8),&
+                               C_LOC(dg_tmp), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_gd,CL_TRUE,0_8,int(this%gs_m*4,8),&
-                               C_LOC(gs_Xh%local_gs_dof), 0,C_NULL_PTR,C_NULL_PTR)
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_gd,CL_TRUE,0_rp,int(this%gs_m*4,8),&
+                               C_LOC(gd_tmp), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_b,CL_TRUE,0_8,int(this%nb*4,8),&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_b,CL_TRUE,0_rp,int(this%nb*4,8),&
                                C_LOC(gs_Xh%local_blk_len), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
+    deallocate(dg_tmp, gd_tmp)
 
     err=clFinish(this%cmd_queue)
     if (err.ne.0) stop 'clFinish'
@@ -407,16 +390,16 @@ contains
     integer :: n, err
     real(kind=rp), target :: rtz1, rnorm
     err = clEnqueueReadBuffer(this%cmd_queue,this%cl_rtz1,CL_TRUE,&
-                                 0_8,int(rp,8),C_LOC(rtz1),0,C_NULL_PTR,C_NULL_PTR)
+                                 0_rp,int(rp,8),C_LOC(rtz1),0,C_NULL_PTR,C_NULL_PTR)
     !if (err.ne.0) stop 'clEnqueueReadBuffer'
     !err = clEnqueueReadBuffer(this%cmd_queue,this%cl_w,CL_TRUE,&
-    !                             0_8,this%array_size,C_LOC(this%w),0,C_NULL_PTR,C_NULL_PTR)
-    if (err.ne.0) stop 'clEnqueueReadBuffer'
+    !                             0_rp,this%array_size,C_LOC(this%w),0,C_NULL_PTR,C_NULL_PTR)
+    !if (err.ne.0) stop 'clEnqueueReadBuffer'
     err=clFinish(this%cmd_queue)
     rnorm = sqrt(rtz1)
     print *, rnorm, rtz1
     !call gs_op_vector(gs_h, this%w, n, GS_OP_ADD)
-    !err=clEnqueueWriteBuffer(this%cmd_queue,this%cl_w,CL_TRUE,0_8,&
+    !err=clEnqueueWriteBuffer(this%cmd_queue,this%cl_w,CL_TRUE,0_rp,&
     !                         this%array_size,C_LOC(this%w), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer cg'    
   end subroutine host_kernel
@@ -424,8 +407,14 @@ contains
     type(cg_banked_fpga_t), target :: this
     type(field_t), target :: x
     integer :: err
-    err = clEnqueueReadBuffer(this%cmd_queue,this%cl_x,CL_TRUE,&
-                                 0_8,this%array_size,C_LOC(x%x),0,C_NULL_PTR,C_NULL_PTR)
+    err = clEnqueueReadBuffer(this%cmd_queue,this%cl_w(1),CL_TRUE,&
+                                 0_rp,this%array_size/4,C_LOC(x%x(1,1,1,1)),0,C_NULL_PTR,C_NULL_PTR)
+    err = clEnqueueReadBuffer(this%cmd_queue,this%cl_w(2),CL_TRUE,&
+                                 0_rp,this%array_size/4,C_LOC(x%x(1,1,1,128)),0,C_NULL_PTR,C_NULL_PTR)
+    err = clEnqueueReadBuffer(this%cmd_queue,this%cl_w(3),CL_TRUE,&
+                                 0_rp,this%array_size/4,C_LOC(x%x(1,1,1,128*2)),0,C_NULL_PTR,C_NULL_PTR)
+    err = clEnqueueReadBuffer(this%cmd_queue,this%cl_w(4),CL_TRUE,&
+                                 0_rp,this%array_size/4,C_LOC(x%x(1,1,1,128*3)),0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueReadBuffer'
    end subroutine banked_fpga_get_data 
 
@@ -460,12 +449,12 @@ contains
     integer :: err, n_bank_array, i, nbanks, b, j
     nbanks = 4
     bank_array_size = array_size/nbanks
-    n_bank_array = n/nbanks
+    n_bank_array = n_bank_array/nbanks
     allocate(temp(n_bank_array))
     do b = 1, nbanks
-       do i = 1, n_bank_array/8
+       do i = 1, n_bank_array
           do j = 1, 8
-             temp((i-1)*8+j) = x((i-1)*nbanks*8+j + (b-1)*8)
+             temp(i) = x((i-1)*nbanks*8+j)
           end do
        end do
        err = clEnqueueWriteBuffer(cmd_queue,cl_x(b),CL_TRUE,0_rp,bank_array_size,&

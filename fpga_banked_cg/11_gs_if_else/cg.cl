@@ -63,62 +63,7 @@ __kernel void cg(__global double * restrict x_1,
                  const int o,
                  const int nb)
 {   
-    __global double * restrict wn[NBANKS];
-    wn[0] = w_1;
-    wn[1] = w_2;
-    wn[2] = w_3;
-    wn[3] = w_4;
-    
-    //gather-scatter
-    int k = 0;
-    #pragma ivdep
-    for(int i = 0; i < nb; i++){
-        double rtr_copies3[M2];
-        int idx[8];
-        int bank[8];
-        int blk_len = b[i];
-        int k1 = gd[k]-1;
-        int j1 = k1 % 32;
-        int id1 = k1 >> 5;
-        bank[0] = j1 >> 3;
-        int off1 = j1 % 8;
-        idx[0] =  off1 + id1*8;
-        
-        double tmp = wn[bank[0]][idx[0]];
-        #pragma unroll
-        for(int i = 0; i < M2; ++i) 
-            rtr_copies3[i] = 0.0;
-        #pragma ivdep
-        #pragma unroll
-        for(int j = 1; j < blk_len; j++){
-            int k2 = gd[k+j]-1;
-            int j2 = k2 % 32;
-            int id2 = k2 >> 5;
-            bank[j] = j2>> 3;
-            int off2 = j2 % 8;
-            idx[j] =  off2 + id2*8;
-        }
 
-        #pragma ivdep
-        #pragma ii 1
-        for(int j = 1; j < blk_len; j++){
-            double cur = rtr_copies3[M2-1] + wn[bank[j]][idx[j]];
-            #pragma unroll
-            for(unsigned j = M2-1; j>0; j--){
-                rtr_copies3[j] = rtr_copies3[j-1];
-            }
-            rtr_copies3[0] = cur;
-        }
-        #pragma unroll
-        for(unsigned i = 0; i < M2; i++)
-            tmp += rtr_copies3[i];
-        #pragma ivdep
-        #pragma ii 1
-        for(int j = 0; j < blk_len; j++){
-            wn[bank[j]][idx[j]] = tmp;
-        }
-        k = k + blk_len;
-    }
     #pragma ivdep
     #pragma unroll 8
     #pragma ii 1
@@ -136,9 +81,56 @@ __kernel void cg(__global double * restrict x_1,
         int ji2 = j2 >> 3;
         int off2 = j2 % 8;
         int idx2 =  off2 + id2*8;
-        
-        double tmp =wn[ji1][idx1] + wn[ji2][idx2];
-        wn[ji1][idx1] = tmp;
-        wn[ji2][idx2] = tmp;
+        double tmp = 0.0;
+
+        if (ji1 == 0){
+            tmp += w_1[idx1];
+        }
+        else if (ji1 == 1) {
+            tmp += w_2[idx1];
+        }
+        else if (ji1 == 2) {
+            tmp += w_3[idx1];
+        }
+        else if (ji1 == 3) {
+            tmp += w_4[idx1];
+        }
+        if (ji2 == 0){
+            tmp += w_1[idx2];
+        }
+        else if (ji2 == 1) {
+            tmp += w_2[idx2];
+        }
+        else if (ji2 == 2) {
+            tmp += w_3[idx2];
+        }
+        else if (ji2 == 3) {
+            tmp += w_4[idx2];
+        }
+
+        if (ji1 == 0){
+            w_1[idx1] = tmp;
+        }
+        else if (ji1 == 1) {
+            w_2[idx1] = tmp;
+        }
+        else if (ji1 == 2) {
+            w_3[idx1] = tmp;
+        }
+        else if (ji1 == 3) {
+            w_4[idx1] = tmp;
+        }
+        if (ji2 == 0){
+            w_1[idx2] = tmp;
+        }
+        else if (ji2 == 1) {
+            w_2[idx2] = tmp;
+        }
+        else if (ji2 == 2) {
+            w_3[idx2] = tmp;
+        }
+        else if (ji2 == 3) {
+            w_4[idx2] = tmp;
+        }
     }
 }
