@@ -69,6 +69,7 @@ contains
     integer(c_intptr_t), target :: prog
     integer(c_intptr_t), allocatable, target :: platform_ids(:), device_ids(:)
     integer :: irec, i
+    integer, target :: zero = 0
     integer :: filesize , lx
     character(len=1,kind=c_char), allocatable, target :: binary(:)
     character(len=1,kind=c_char), target :: c_kernel_name(1:1024)
@@ -246,66 +247,66 @@ contains
     if (err.ne.0) stop 'clSetKernelArg'
 
 
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_mult,CL_TRUE,0_rp,this%array_size,&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_mult,CL_TRUE,0_8,this%array_size,&
                                C_LOC(c_Xh%mult), 0,C_NULL_PTR,C_NULL_PTR)
     if (err .ne. 0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_g1,CL_TRUE,0_rp,this%array_size,&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_g1,CL_TRUE,0_8,this%array_size,&
                                C_LOC(c_Xh%g11), 0,C_NULL_PTR,C_NULL_PTR)
     if (err .ne. 0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_g2,CL_TRUE,0_rp,this%array_size,&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_g2,CL_TRUE,0_8,this%array_size,&
                                C_LOC(c_Xh%g12), 0,C_NULL_PTR,C_NULL_PTR)
     if (err .ne. 0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_g3,CL_TRUE,0_rp,this%array_size,&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_g3,CL_TRUE,0_8,this%array_size,&
                                C_LOC(c_Xh%g13), 0,C_NULL_PTR,C_NULL_PTR)
     if (err .ne. 0) stop 'clEnqueueWriteBuffer'
     
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_g4,CL_TRUE,0_rp,this%array_size,&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_g4,CL_TRUE,0_8,this%array_size,&
                                C_LOC(c_Xh%g22), 0,C_NULL_PTR,C_NULL_PTR)
     if (err .ne. 0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue, this%cl_g5, CL_TRUE, 0_dp, this%array_size,&
+    err = clEnqueueWriteBuffer(this%cmd_queue, this%cl_g5, CL_TRUE, 0_8, this%array_size,&
                                C_LOC(c_Xh%g23), 0, C_NULL_PTR, C_NULL_PTR)
     if (err .ne. 0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_g6,CL_TRUE,0_rp,this%array_size,&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_g6,CL_TRUE,0_8,this%array_size,&
                                C_LOC(c_Xh%g33), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
     
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_dx,CL_TRUE,0_rp,this%dx_size,&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_dx,CL_TRUE,0_8,this%dx_size,&
                                C_LOC(Xh%dx), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_dxt,CL_TRUE,0_rp,this%dx_size,&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_dxt,CL_TRUE,0_8,this%dx_size,&
                                C_LOC(Xh%dxt), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_w,CL_TRUE,0_rp,this%array_size,&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_w,CL_TRUE,0_8,this%array_size,&
                                C_LOC(w%x), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_mask,CL_TRUE,0_rp,int((bclst%bc(1)%bcp%msk(0)+1)*4,8),&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_mask,CL_TRUE,0_8,int((bclst%bc(1)%bcp%msk(0)+1)*4,8),&
                                C_LOC(bclst%bc(1)%bcp%msk(0)), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_x,CL_TRUE,0_rp,this%array_size,&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_x,CL_TRUE,0_8,this%array_size,&
                                C_LOC(x%x), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_res,CL_TRUE,0_rp,this%array_size,&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_res,CL_TRUE,0_8,this%array_size,&
                                C_LOC(r%x), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_p,CL_TRUE,0_rp,this%array_size,&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_p,CL_TRUE,0_8,this%array_size,&
                                C_LOC(r%x), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_beta,CL_TRUE,0_rp,int(8,8),&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_beta,CL_TRUE,0_8,int(8,8),&
                                C_LOC(beta), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_rtz1,CL_TRUE,0_rp,int(8,8),&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_rtz1,CL_TRUE,0_8,int(8,8),&
                                C_LOC(rtz1), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_v,CL_TRUE,0_rp,int(this%gs_m*rp,8),&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_v,CL_TRUE,0_8,int(this%gs_m*rp,8),&
                                C_LOC(gs_Xh%local_gs), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_dg,CL_TRUE,0_rp,int(this%gs_m*4,8),&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_dg,CL_TRUE,0_8,int(this%gs_m*4,8),&
                                C_LOC(gs_Xh%local_dof_gs), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_gd,CL_TRUE,0_rp,int(this%gs_m*4,8),&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_gd,CL_TRUE,0_8,int(this%gs_m*4,8),&
                                C_LOC(gs_Xh%local_gs_dof), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_b,CL_TRUE,0_rp,int(this%nb*4,8),&
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_b,CL_TRUE,0_8,int(this%nb*4,8),&
                                C_LOC(gs_Xh%local_blk_len), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
 
@@ -409,16 +410,16 @@ contains
     integer :: n, err
     real(kind=rp), target :: rtz1, rnorm
     err = clEnqueueReadBuffer(this%cmd_queue,this%cl_rtz1,CL_TRUE,&
-                                 0_rp,int(rp,8),C_LOC(rtz1),0,C_NULL_PTR,C_NULL_PTR)
-    if (err.ne.0) stop 'clEnqueueReadBuffer'
+                                 0_8,int(rp,8),C_LOC(rtz1),0,C_NULL_PTR,C_NULL_PTR)
+    !if (err.ne.0) stop 'clEnqueueReadBuffer'
     !err = clEnqueueReadBuffer(this%cmd_queue,this%cl_w,CL_TRUE,&
-    !                             0_rp,this%array_size,C_LOC(this%w),0,C_NULL_PTR,C_NULL_PTR)
+    !                             0_8,this%array_size,C_LOC(this%w),0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueReadBuffer'
     err=clFinish(this%cmd_queue)
     rnorm = sqrt(rtz1)
     print *, rnorm, rtz1
     !call gs_op_vector(gs_h, this%w, n, GS_OP_ADD)
-    !err=clEnqueueWriteBuffer(this%cmd_queue,this%cl_w,CL_TRUE,0_rp,&
+    !err=clEnqueueWriteBuffer(this%cmd_queue,this%cl_w,CL_TRUE,0_8,&
     !                         this%array_size,C_LOC(this%w), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer cg'    
   end subroutine host_kernel
@@ -427,7 +428,7 @@ contains
     type(field_t), target :: x
     integer :: err
     err = clEnqueueReadBuffer(this%cmd_queue,this%cl_x,CL_TRUE,&
-                                 0_rp,this%array_size,C_LOC(x%x),0,C_NULL_PTR,C_NULL_PTR)
+                                 0_8,this%array_size,C_LOC(x%x),0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueReadBuffer'
    end subroutine fpga_get_data
 end module cg_fpga
