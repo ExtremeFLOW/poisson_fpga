@@ -83,7 +83,6 @@ program poisson_fpga
   call bc_list_apply_scalar(bclst, w%x, n)
   rtz1 = rtr
   beta = 0d0 
-  print *, 'drive1'
   call cg_fpga_populate(solver, r, w, x, Xh, c_Xh,bclst, gs_Xh, rtz1, beta)
   call set_timer_flop_cnt(0, msh%glb_nelv, Xh%lx, niter, n_glb)
   ksp_results = solver%solve(Ax, x, f, n, c_Xh, bclst, gs_Xh, niter)

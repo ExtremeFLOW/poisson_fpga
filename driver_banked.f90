@@ -1,6 +1,6 @@
 program poisson_fpga
   use neko
-  use cg_fpga
+  use cg_banked_fpga
   implicit none
 
   character(len=NEKO_FNAME_LEN) :: fname, lxchar
@@ -12,7 +12,7 @@ program poisson_fpga
   type(gs_t) :: gs_Xh
   type(dirichlet_t) :: dir_bc
   type(ksp_monitor_t) :: ksp_results
-  type(cg_fpga_t) :: solver
+  type(cg_banked_fpga_t) :: solver
   type(bc_list_t) :: bclst
   type(field_t), target :: w, x, p, r
   type(ax_helm_t) :: ax
@@ -69,7 +69,7 @@ program poisson_fpga
   call set_f(f, c_Xh%mult, dm_Xh, n, gs_Xh)
   call bc_list_apply(bclst,f,n)
   call solver%init(n)
-  call cg_fpga_init_device(solver, idevice, iplatform, kernel_file_name, lx) 
+  call cg_banked_fpga_init_device(solver, idevice, iplatform, kernel_file_name, lx) 
  
   n_glb = Xh%lxyz * msh%glb_nelv
 
@@ -83,12 +83,11 @@ program poisson_fpga
   call bc_list_apply_scalar(bclst, w%x, n)
   rtz1 = rtr
   beta = 0d0 
-  print *, 'drive1'
-  call cg_fpga_populate(solver, r, w, x, Xh, c_Xh,bclst, gs_Xh, rtz1, beta)
+  call cg_banked_fpga_populate(solver, r, w, x, Xh, c_Xh,bclst, gs_Xh, rtz1, beta)
   call set_timer_flop_cnt(0, msh%glb_nelv, Xh%lx, niter, n_glb)
   ksp_results = solver%solve(Ax, x, f, n, c_Xh, bclst, gs_Xh, niter)
   call set_timer_flop_cnt(1, msh%glb_nelv, Xh%lx, niter, n_glb)
-  call fpga_get_data(solver, x)
+  call banked_fpga_get_data(solver, x)
   fname = 'out.fld'
   mf =  file_t(fname)
   call mf%write(x)
