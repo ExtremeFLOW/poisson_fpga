@@ -119,26 +119,4 @@ __kernel void cg(__global double * restrict x_1,
         }
         k = k + blk_len;
     }
-    #pragma ivdep
-    #pragma unroll 8
-    #pragma ii 1
-    for(int i = (o-1); i < m; i+=2){
-        int k1 = gd[i]-1;
-        int j1 = k1 % 32;
-        int id1 = k1 >> 5;
-        int ji1 = j1 >> 3;
-        int off1 = j1 % 8;
-        int idx1 =  off1 + id1*8;
-        
-        int k2 = gd[i+1]-1;
-        int j2 = k2 % 32;
-        int id2 = k2 >> 5;
-        int ji2 = j2 >> 3;
-        int off2 = j2 % 8;
-        int idx2 =  off2 + id2*8;
-        
-        double tmp =wn[ji1][idx1] + wn[ji2][idx2];
-        wn[ji1][idx1] = tmp;
-        wn[ji2][idx2] = tmp;
-    }
 }

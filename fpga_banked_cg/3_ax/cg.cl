@@ -68,8 +68,54 @@ __kernel void cg(__global double * restrict x_1,
     wn[1] = w_2;
     wn[2] = w_3;
     wn[3] = w_4;
+    __global double * restrict pn[NBANKS];
+    pn[0] = p_1;
+    pn[1] = p_2;
+    pn[2] = p_3;
+    pn[3] = p_4;
+    __global double * restrict rn[NBANKS];
+    rn[0] = r_1;
+    rn[1] = r_2;
+    rn[2] = r_3;
+    rn[3] = r_4;
+    __global double * restrict xn[NBANKS];
+    xn[0] = x_1;
+    xn[1] = x_2;
+    xn[2] = x_3;
+    xn[3] = x_4;
+    __global const double * restrict g1[NBANKS];
+    g1[0] = g1_1;
+    g1[1] = g1_2;
+    g1[2] = g1_3;
+    g1[3] = g1_4;
+    __global const double * restrict g2[NBANKS];
+    g2[0] = g2_1;
+    g2[1] = g2_2;
+    g2[2] = g2_3;
+    g2[3] = g2_4;
+    __global const double * restrict g3[NBANKS];
+    g3[0] = g3_1;
+    g3[1] = g3_2;
+    g3[2] = g3_3;
+    g3[3] = g3_4;
+    __global const double * restrict g4[NBANKS];
+    g4[0] = g4_1;
+    g4[1] = g4_2;
+    g4[2] = g4_3;
+    g4[3] = g4_4;
+    __global const double * restrict g5[NBANKS];
+    g5[0] = g5_1;
+    g5[1] = g5_2;
+    g5[2] = g5_3;
+    g5[3] = g5_4;
+    __global const double * restrict g6[NBANKS];
+    g6[0] = g6_1;
+    g6[1] = g6_2;
+    g6[2] = g6_3;
+    g6[3] = g6_4;
  
     beta[0] = 5.0;
+    #pragma ivdep
     for(unsigned ele = 0; ele < N/NBANKS; ele += LX1*LY1*LZ1/NBANKS){
         double shur[LX1*LY1*LZ1];
         double shus[LX1*LY1*LZ1];
@@ -89,67 +135,32 @@ __kernel void cg(__global double * restrict x_1,
             shdx[ij] = dx[ij];
             shdxt[ij] = dxt[ij];
         }
+
+        #pragma loop_coalesce
+        #pragma ii 1
         #pragma ivdep
         for(int ijk=0; ijk<LX1*LY1*LZ1; ijk+=32){
-            int b_ijk = ijk >> 2;
+            int b_ijk = ijk >> 2; 
             #pragma unroll
-            for(unsigned i = 0; i < M; i++){
-                int b_i = i % M;
-                double temp = r_1[b_i + b_ijk + ele] + beta[0] * p_1[b_i + b_ijk + ele];
-                shu[ijk+i] =  temp;
-                p_1[b_i + b_ijk + ele] = temp;
-                shg1[ijk+i] = g1_1[b_i + b_ijk + ele];
-                shg2[ijk+i] = g2_1[b_i + b_ijk + ele];
-                shg3[ijk+i] = g3_1[b_i + b_ijk + ele];
-                shg4[ijk+i] = g4_1[b_i + b_ijk + ele];
-                shg5[ijk+i] = g5_1[b_i + b_ijk + ele];
-                shg6[ijk+i] = g6_1[b_i + b_ijk + ele];
-            }
-            #pragma unroll
-            for(unsigned i = M; i < 2*M; i++){
-                int b_i = i % M;
-                double temp = r_2[b_i + b_ijk + ele] + beta[0] * p_2[b_i + b_ijk + ele];
-                shu[ijk+i] =  temp;
-                p_2[i -M +b_ijk + ele] = temp;
-                shg1[ijk+i] = g1_2[b_i + b_ijk + ele];
-                shg2[ijk+i] = g2_2[b_i + b_ijk + ele];
-                shg3[ijk+i] = g3_2[b_i + b_ijk + ele];
-                shg4[ijk+i] = g4_2[b_i + b_ijk + ele];
-                shg5[ijk+i] = g5_2[b_i + b_ijk + ele];
-                shg6[ijk+i] = g6_2[b_i + b_ijk + ele];
-            }
-            #pragma unroll
-            for(unsigned i = 2*M; i < 3*M; i++){
-                int b_i = i % M;
-                double temp = r_3[b_i + b_ijk + ele] + beta[0] * p_3[b_i + b_ijk + ele];
-                shu[ijk+i] =  temp;
-                p_3[b_i + b_ijk + ele] = temp;
-                shg1[ijk+i] = g1_3[b_i + b_ijk + ele];
-                shg2[ijk+i] = g2_3[b_i + b_ijk + ele];
-                shg3[ijk+i] = g3_3[b_i + b_ijk + ele];
-                shg4[ijk+i] = g4_3[b_i + b_ijk + ele];
-                shg5[ijk+i] = g5_3[b_i + b_ijk + ele];
-                shg6[ijk+i] = g6_3[b_i + b_ijk + ele];
-            }
-            #pragma unroll
-            for(unsigned i = 3*M; i < 4*M; i++){
-                int b_i = i % M;
-                double temp = r_4[b_i + b_ijk + ele] + beta[0] * p_4[b_i + b_ijk + ele];
-                shu[ijk+i] =  temp;
-                p_4[b_i + b_ijk + ele] = temp;
-                shg1[ijk+i] = g1_4[b_i + b_ijk + ele];
-                shg2[ijk+i] = g2_4[b_i + b_ijk + ele];
-                shg3[ijk+i] = g3_4[b_i + b_ijk + ele];
-                shg4[ijk+i] = g4_4[b_i + b_ijk + ele];
-                shg5[ijk+i] = g5_4[b_i + b_ijk + ele];
-                shg6[ijk+i] = g6_4[b_i + b_ijk + ele];
+            for(unsigned i = 0; i < NBANKS; i++){
+                #pragma unroll
+                for(unsigned j = 0; j < M; j++){
+                    double temp = rn[i][j + b_ijk + ele] + beta[0] * pn[i][j + b_ijk + ele];
+                    shu[ijk+i*M+j] =  temp;
+                    shg1[ijk+i*M+j] = g1[i][j + b_ijk + ele];
+                    shg2[ijk+i*M+j] = g2[i][j + b_ijk + ele];
+                    shg3[ijk+i*M+j] = g3[i][j + b_ijk + ele];
+                    shg4[ijk+i*M+j] = g4[i][j + b_ijk + ele];
+                    shg5[ijk+i*M+j] = g5[i][j + b_ijk + ele];
+                    shg6[ijk+i*M+j] = g6[i][j + b_ijk + ele];
+                }
             }
         }
+        
         #pragma loop_coalesce
         #pragma ii 1
         for (unsigned k=0; k<LZ1; ++k){
             for(unsigned j = 0; j < LY1; j++){
-                #pragma unroll 4
                 for(unsigned i = 0; i < LX1; i++){
                     int ij = i + j*LX1;
                     int ijk = ij + k*LX1*LY1;
@@ -184,7 +195,6 @@ __kernel void cg(__global double * restrict x_1,
         #pragma ii 1
         for (unsigned k=0; k<LZ1; ++k){
             for(unsigned j = 0; j < LY1; j++){
-                #pragma unroll 4
                 for(unsigned i = 0; i < LX1; i++){
                     int ij = i + j*LX1;
                     int ijk = ij + k*LX1*LY1;
@@ -211,6 +221,7 @@ __kernel void cg(__global double * restrict x_1,
                 #pragma unroll
                 for(unsigned j = 0; j < M; j++){
                     wn[i][j + b_ijk + ele] = shw[ijk+i*M+j];
+                    xn[i][j + b_ijk + ele] = shu[ijk+i*M+j];
                 }
             }
         }

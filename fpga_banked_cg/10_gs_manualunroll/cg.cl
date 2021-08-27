@@ -70,9 +70,10 @@ __kernel void cg(__global double * restrict x_1,
     wn[3] = w_4;
     
     //gather-scatter
-    int k = 0;
     #pragma ivdep
+    #pragma unroll 2
     for(int i = 0; i < nb; i++){
+        int k = dg[i];
         double rtr_copies3[M2];
         int idx[8];
         int bank[8];
@@ -117,7 +118,6 @@ __kernel void cg(__global double * restrict x_1,
         for(int j = 0; j < blk_len; j++){
             wn[bank[j]][idx[j]] = tmp;
         }
-        k = k + blk_len;
     }
     #pragma ivdep
     #pragma unroll 8

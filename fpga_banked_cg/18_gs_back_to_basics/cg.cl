@@ -89,7 +89,7 @@ __kernel void cg(__global double * restrict x_1,
         for(int i = 0; i < M2; ++i) 
             rtr_copies3[i] = 0.0;
         #pragma ivdep
-        #pragma unroll
+        #pragma ii 1
         for(int j = 1; j < blk_len; j++){
             int k2 = gd[k+j]-1;
             int j2 = k2 % 32;
@@ -97,11 +97,7 @@ __kernel void cg(__global double * restrict x_1,
             bank[j] = j2>> 3;
             int off2 = j2 % 8;
             idx[j] =  off2 + id2*8;
-        }
-
-        #pragma ivdep
-        #pragma ii 1
-        for(int j = 1; j < blk_len; j++){
+        
             double cur = rtr_copies3[M2-1] + wn[bank[j]][idx[j]];
             #pragma unroll
             for(unsigned j = M2-1; j>0; j--){
@@ -113,14 +109,12 @@ __kernel void cg(__global double * restrict x_1,
         for(unsigned i = 0; i < M2; i++)
             tmp += rtr_copies3[i];
         #pragma ivdep
-        #pragma ii 1
         for(int j = 0; j < blk_len; j++){
             wn[bank[j]][idx[j]] = tmp;
         }
         k = k + blk_len;
     }
     #pragma ivdep
-    #pragma unroll 8
     #pragma ii 1
     for(int i = (o-1); i < m; i+=2){
         int k1 = gd[i]-1;
