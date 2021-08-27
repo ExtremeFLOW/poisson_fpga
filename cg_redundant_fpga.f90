@@ -72,6 +72,7 @@ contains
     integer(c_intptr_t), allocatable, target :: platform_ids(:), device_ids(:)
     integer :: irec, i
     integer :: filesize , lx
+    integer, target :: zero =0
     character(len=1,kind=c_char), allocatable, target :: binary(:)
     character(len=1,kind=c_char), target :: c_kernel_name(1:1024)
     type(c_ptr), target :: psource  
@@ -106,7 +107,7 @@ contains
     this%cl_x = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_4_INTELFPGA),&
                           this%array_size,C_NULL_PTR, err)
     if (err.ne.0) stop 'clCreateBuffer'
-    this%cl_w = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE, CL_CHANNEL_3_INTELFPGA),&
+    this%cl_w = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE, CL_CHANNEL_1_INTELFPGA),&
                           this%array_size,C_NULL_PTR, err)
     if (err.ne.0) stop 'clCreateBuffer'
     this%cl_res = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_1_INTELFPGA),&
@@ -120,7 +121,7 @@ contains
                           this%array_size,C_NULL_PTR, err)
     if (err.ne.0) stop 'clCreateBuffer'
     this%cl_x_cord = clCreateBuffer(this%context,&
-                           ior(CL_MEM_READ_ONLY, CL_CHANNEL_3_INTELFPGA),&
+                           ior(CL_MEM_READ_ONLY, CL_CHANNEL_4_INTELFPGA),&
                            this%array_size,C_NULL_PTR, err)
     if (err.ne.0) stop 'clCreateBuffer'
     this%cl_y_cord = clCreateBuffer(this%context,&
@@ -128,7 +129,7 @@ contains
                            this%array_size,C_NULL_PTR, err)
     if (err.ne.0) stop 'clCreateBuffer'
     this%cl_z_cord = clCreateBuffer(this%context,&
-                           ior(CL_MEM_READ_ONLY, CL_CHANNEL_1_INTELFPGA),&
+                           ior(CL_MEM_READ_ONLY, CL_CHANNEL_4_INTELFPGA),&
                            this%array_size,C_NULL_PTR, err)
     if (err.ne.0) stop 'clCreateBuffer'
     this%cl_jx = clCreateBuffer(this%context,&
@@ -173,7 +174,7 @@ contains
     this%cl_dg = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_4_INTELFPGA),&
                           this%array_size,C_NULL_PTR, err)
     if (err.ne.0) stop 'clCreateBuffer'
-    this%cl_jacinv = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_2_INTELFPGA),&
+    this%cl_jacinv = clCreateBuffer(this%context,ior(CL_MEM_READ_WRITE,CL_CHANNEL_3_INTELFPGA),&
                           this%array_size,C_NULL_PTR, err)
     if (err.ne.0) stop 'clCreateBuffer'
     
@@ -243,6 +244,9 @@ contains
     this%gs_m = gs_Xh%nlocal
     this%lo = gs_Xh%local_facet_offset
     this%nb = gs_Xh%nlocal_blks
+    !this%gs_m = 0
+    !this%lo = 1
+    !this%nb = 0
     print *, 'nlocal unique ids', this%gs_m, 'local dofs', this%lo,&
            'number of blocks', this%nb
     err=clSetKernelArg(this%cl_cg_kernel,22,sizeof(this%gs_m),C_LOC(this%gs_m))
@@ -251,9 +255,6 @@ contains
     if (err.ne.0) stop 'clSetKernelArg'
     err=clSetKernelArg(this%cl_cg_kernel,24,sizeof(this%nb),C_LOC(this%nb))
     if (err.ne.0) stop 'clSetKernelArg'
-    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_mult,CL_TRUE,0_8,this%array_size,&
-                               C_LOC(c_Xh%mult), 0,C_NULL_PTR,C_NULL_PTR)
-    if (err .ne. 0) stop 'clEnqueueWriteBuffer'
     lx = Xh%lx
     ly = Xh%ly
     lz = Xh%lz
@@ -336,6 +337,9 @@ contains
     err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_w,CL_TRUE,0_8,this%array_size,&
                                C_LOC(w%x), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
+    err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_mult,CL_TRUE,0_8,this%array_size,&
+                               C_LOC(c_Xh%mult), 0,C_NULL_PTR,C_NULL_PTR)
+    if (err .ne. 0) stop 'clEnqueueWriteBuffer'
     err = clEnqueueWriteBuffer(this%cmd_queue,this%cl_mask,CL_TRUE,0_8,int((bclst%bc(1)%bcp%msk(0)+1)*4,8),&
                                C_LOC(bclst%bc(1)%bcp%msk(0)), 0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueWriteBuffer'
@@ -425,12 +429,12 @@ contains
     end if
     norm_fac = one/sqrt(coef%volume)
 
-    rtz1 = one
     call rzero(x%x, n)
     call rzero(this%p, n)
     call copy(this%r, f, n)
 
     rtr = glsc3(this%r, coef%mult, this%r, n)
+    print *, 'first',sqrt(rtr)
     rnorm = sqrt(rtr)*norm_fac
     ksp_results%res_start = rnorm
     ksp_results%res_final = rnorm
@@ -440,6 +444,7 @@ contains
        err=clEnqueueTask(this%cmd_queue,this%cl_cg_kernel,0,C_NULL_PTR,C_NULL_PTR)
        if (err .ne. 0) stop 'clEnqueueEnqueueTask cg'
        call host_kernel(this, gs_h, blst, n)
+       print *,'true after', sqrt(glsc3(this%r, coef%mult, this%r,n))
     end do
     err=clFinish(this%cmd_queue)
     ksp_results%res_final = rnorm
@@ -451,16 +456,20 @@ contains
     type(gs_t) :: gs_h
     type(bc_list_t) :: blst
     integer :: n, err
-    real(kind=rp), target :: rtz1, rnorm
+    real(kind=rp), target :: rtz1,rtz2, rnorm
     err = clEnqueueReadBuffer(this%cmd_queue,this%cl_rtz1,CL_TRUE,&
                                  0_8,int(rp,8),C_LOC(rtz1),0,C_NULL_PTR,C_NULL_PTR)
+    !err = clEnqueueReadBuffer(this%cmd_queue,this%cl_rtz2,CL_TRUE,&
+    !                             0_8,int(rp,8),C_LOC(rtz2),0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueReadBuffer'
-    !err = clEnqueueReadBuffer(this%cmd_queue,this%cl_w,CL_TRUE,&
-    !                             0_8,this%array_size,C_LOC(this%w),0,C_NULL_PTR,C_NULL_PTR)
+    if (err.ne.0) stop 'clEnqueueReadBuffer'
+    !err = clEnqueueReadBuffer(this%cmd_queue,this%cl_res,CL_TRUE,&
+    !                             0_8,this%array_size,C_LOC(this%r),0,C_NULL_PTR,C_NULL_PTR)
     if (err.ne.0) stop 'clEnqueueReadBuffer'
     err=clFinish(this%cmd_queue)
+    
     rnorm = sqrt(rtz1)
-    print *, rnorm, rtz1
+    print *, 'actual result',rnorm, rtz1
     !call gs_op_vector(gs_h, this%w, n, GS_OP_ADD)
     !err=clEnqueueWriteBuffer(this%cmd_queue,this%cl_w,CL_TRUE,0_8,&
     !                         this%array_size,C_LOC(this%w), 0,C_NULL_PTR,C_NULL_PTR)
